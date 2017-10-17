@@ -7,6 +7,7 @@ import requests
 
 app = Flask(__name__)
 
+#Set important global vars
 CLIENTID = "aleri"
 CLIENTSECRET = "6ec7c884-fd1a-42de-938a-d71b0a84faa0"
 USERNAME = "dominik.fehr@aleri.de"
@@ -14,8 +15,10 @@ PASSWORD = "elvyEL4pkW8b"
 ACCESSTOKEN = ""
 SENSORID = "b0038197-cafb-4164-ac8b-8c072b27f4f0"
 
+#Set sensor data @ Com2M
 @app.route('/setSensor')
 def setSensor():
+    print("Trash event received, updating cloud sensor...")
     value = request.args.get('value')
     headers = {'Authorization':ACCESSTOKEN}
     response = requests.post(
@@ -25,6 +28,7 @@ def setSensor():
     ).json()
     return "OK"
 
+#Retrieve latest sensor data from Com2M
 @app.route('/getSensor')
 def getSensor():
     headers = {'Authorization':ACCESSTOKEN}
@@ -34,19 +38,7 @@ def getSensor():
     ).json()
     return "TrashFox detected a free capacity of "+response['capacity']['value']+"% for this bin. Last update: "+response['capacity']['timestamp']
 
-def setupStructure():
-    setupBuilding()
-
-def setupBuilding():
-    headers = {'Authorization':ACCESSTOKEN}
-    response = requests.post(
-        url='https://cloud.com2m.de/api/asset-service/items/Building:Group/ad8a51e2-13b4-4e39-8762-f41f847c30d0/members/Sensor:Device',
-        json={"name":"TrashSensor"},
-        headers=headers
-    ).json()
-    print headers
-    print response
-
+#Login to Com2M and store OAuth2 access token
 def loginCom2m():
     global ACCESSTOKEN
     try:
@@ -58,8 +50,10 @@ def loginCom2m():
         print("Failed retrieving access token...")
         return False
 
+#Start main loop by serving an HTTP Server
 if __name__ == '__main__':
     print("Starting TrashFox, waiting for trash event...")
     if(loginCom2m()):
-        setupStructure()
         app.run(threaded=True, debug=False, port=8081, host='0.0.0.0')
+    else:
+        print("Login failed, please check credentials!")
