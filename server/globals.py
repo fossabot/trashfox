@@ -1,8 +1,13 @@
+
 ACCESSTOKEN = ""
 BUILDINGNAME = "HQ"
-CLIENTID = "aleri"
-CLIENTSECRET = "6ec7c884-fd1a-42de-938a-d71b0a84faa0"
-PASSWORD = "elvyEL4pkW8b"
+
+# from com2m
+CLIENTID = ""
+CLIENTSECRET = ""
+USERNAME = ""
+PASSWORD = ""
+
+# port trashfox should listen on
 PORT = 8081
 SENSORID = ""
-USERNAME = "dominik.fehr@aleri.de"
