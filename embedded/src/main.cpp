@@ -9,8 +9,8 @@
 #include "wisol_sigfox.h"
 
 #define BLYNK_PRINT Serial
-#define PIN_UPTIME V1
 
+BlynkTimer timer;
 SoftwareSerial  wisol_serial(D7,D8);
 
 char auth[] = "954a64676b4147f9bf4246e581877828";
@@ -24,10 +24,11 @@ extern "C" {
     
     // This function tells Arduino what to do if there is a Widget
     // which is requesting data for Virtual Pin (5)
-    BLYNK_READ(PIN_UPTIME)
+    void myTimerEvent()
     {
-        // This command writes Arduino's uptime in seconds to Virtual Pin (5)
-        Blynk.virtualWrite(PIN_UPTIME, HCSR04_get_data());
+        // You can send any value at any time.
+        // Please don't send more that 10 values per second.
+        Blynk.virtualWrite(V1, HCSR04_get_data());
     }
     
     /** initialize software serial with proper timeouts */
@@ -55,7 +56,8 @@ extern "C" {
 void setup() {
     //Blynk Begin
     Blynk.begin(auth, ssid, pass);
-    delay(1000);
+    // Timer is set to 15 sec/uplink
+    timer.setInterval(1000L*15, myTimerEvent);
     Serial.begin(9600);
     HCSR04_setup();
     
@@ -93,7 +95,8 @@ void setup() {
 }
 
 void loop() {
-    Blynk.run(); // Initates Blnynk
+    Blynk.run(); // Initates Blynk
+    timer.run(); // Initiates BlynkTimer
     int distance = HCSR04_get_data();
     if ( distance != -1) {
         // got valid value, format. As of now, paste big endian int into buffer
@@ -109,10 +112,12 @@ void loop() {
             Serial.println("error!");
         }
     }
-    
-
-    //myTimerEvent();
+    if ( distance <= 6) {
+        Blynk.notify(String("The fill rate: %100. Sensor val: ") + distance);
+    } else if ( distance <= 8 && distance > 6) {
+        Blynk.notify(String("The fill rate: %80. Sensor val: ") + distance);
+    }
+    delay(15000);
     // sleep 10 minutes
-    delay(10000);
     //delay(1000*60*10);
 }
