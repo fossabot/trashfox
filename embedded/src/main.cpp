@@ -1,5 +1,3 @@
-// The value of sensor is written on V1 virtual port on Blynk.cc
-
 #include <Arduino.h>
 #include <Wire.h>
 #include <ESP8266WiFi.h>
@@ -22,8 +20,6 @@ char  sigfox_send_buf[12];
 extern "C" {
 #endif
     
-    // This function tells Arduino what to do if there is a Widget
-    // which is requesting data for Virtual Pin (5)
     void myTimerEvent()
     {
         // You can send any value at any time.
@@ -99,12 +95,25 @@ void loop() {
     timer.run(); // Initiates BlynkTimer
     int distance = HCSR04_get_data();
     if ( distance != -1) {
-        // got valid value, format. As of now, paste big endian int into buffer
+        // Got valid value, format. As of now, paste big endian int into buffer
         memset(sigfox_send_buf,0,sizeof(sigfox_send_buf));
         memcpy(sigfox_send_buf, &distance, sizeof(int));
         
         // and send it.
         Serial.print(distance);
+        // Notification loop
+        if ( distance <= 4) {
+            Blynk.notify(String("%100 full. Empty the Trash! sensorVal: ") + distance);
+        } else if ( distance > 4 && distance <= 6 ) {
+            Blynk.notify(String("%90 full. sensorVal: ") + distance);
+        } else if ( distance > 6 && distance <= 8 ) {
+            Blynk.notify(String("%80 full. sensorVal: ") + distance);
+        } else if ( distance > 8 && distance <= 10 ) {
+            Blynk.notify(String("%70 full. sensorVal: ") + distance);
+        } else if ( distance > 10 && distance <= 12 ){
+            Blynk.notify(String("%60 full. sensorVal: ") + distance);
+        }
+        
         Serial.print(">");
         if (wisol_sigfox__send_frame((const uint8_t*)sigfox_send_buf, sizeof(int), false)) {
             Serial.println("sent.");
@@ -112,12 +121,6 @@ void loop() {
             Serial.println("error!");
         }
     }
-    if ( distance <= 6) {
-        Blynk.notify(String("The fill rate: %100. Sensor val: ") + distance);
-    } else if ( distance <= 8 && distance > 6) {
-        Blynk.notify(String("The fill rate: %80. Sensor val: ") + distance);
-    }
+    // max notification rate is notification/15sec
     delay(15000);
-    // sleep 10 minutes
-    //delay(1000*60*10);
 }
