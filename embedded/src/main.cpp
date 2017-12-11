@@ -9,6 +9,7 @@
 #include "wisol_sigfox.h"
 
 #define BLYNK_PRINT Serial
+#define PIN_UPTIME V1
 
 SoftwareSerial  wisol_serial(D7,D8);
 
@@ -20,6 +21,14 @@ char  sigfox_send_buf[12];
 #ifdef __cplusplus
 extern "C" {
 #endif
+    
+    // This function tells Arduino what to do if there is a Widget
+    // which is requesting data for Virtual Pin (5)
+    BLYNK_READ(PIN_UPTIME)
+    {
+        // This command writes Arduino's uptime in seconds to Virtual Pin (5)
+        Blynk.virtualWrite(PIN_UPTIME, HCSR04_get_data());
+    }
     
     /** initialize software serial with proper timeouts */
     void wisol_sigfox__serial_init() {
@@ -84,7 +93,7 @@ void setup() {
 }
 
 void loop() {
-    Blynk.run();
+    Blynk.run(); // Initates Blnynk
     int distance = HCSR04_get_data();
     if ( distance != -1) {
         // got valid value, format. As of now, paste big endian int into buffer
@@ -93,17 +102,17 @@ void loop() {
         
         // and send it.
         Serial.print(distance);
-        // Write it to virtual port on Blynk App
-        Blynk.virtualWrite(V1, (int)distance);
         Serial.print(">");
         if (wisol_sigfox__send_frame((const uint8_t*)sigfox_send_buf, sizeof(int), false)) {
             Serial.println("sent.");
         } else {
             Serial.println("error!");
         }
-        
     }
     
+
+    //myTimerEvent();
     // sleep 10 minutes
+    delay(10000);
     //delay(1000*60*10);
 }
